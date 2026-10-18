@@ -55,7 +55,7 @@ export const DEFAULTS = {
   loudness: -14,
   seed: 1,
   boil: 0,
-  watermark: 'explainroo.com',
+  watermark: false,
   images: null,
   brand: null,
   fonts: [],

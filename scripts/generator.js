@@ -71,6 +71,7 @@ export async function generateVideo({
     voice: generated.voice || voice,
     music: true,
     captions: 'auto',
+    watermark: false,
   };
 
   fs.writeFileSync(path.join(projectDir, 'video.json'), JSON.stringify(videoConfig, null, 2), 'utf8');
