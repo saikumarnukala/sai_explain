@@ -9,3 +9,5 @@ out/
 .cache/
 .scratch/
 .env
+client_secret.json
+youtube_token.json
