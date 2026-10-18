@@ -26,23 +26,38 @@ const ROOT_DIR = process.cwd();
 const CLIENT_SECRET_FILE = path.join(ROOT_DIR, 'client_secret.json');
 const TOKEN_FILE = path.join(ROOT_DIR, 'youtube_token.json');
 
+function findFile(filenames) {
+  for (const name of filenames) {
+    const p = path.join(ROOT_DIR, name);
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 async function getOAuth2Client() {
-  if (!fs.existsSync(CLIENT_SECRET_FILE)) {
+  const secretFile = findFile(['client_secret.json', 'client_secrets.json']);
+  const tokenFile = findFile(['youtube_token.json', 'token.json']);
+
+  if (!secretFile) {
     throw new Error(
-      `Missing client_secret.json!\nPlease download it from Google Cloud Console and place it at:\n${CLIENT_SECRET_FILE}`
+      `Missing client_secret.json!\nPlease download it from Google Cloud Console and place it at:\n${path.join(ROOT_DIR, 'client_secret.json')}`
     );
   }
 
-  const content = JSON.parse(fs.readFileSync(CLIENT_SECRET_FILE, 'utf8'));
+  const content = JSON.parse(fs.readFileSync(secretFile, 'utf8'));
   const keys = content.installed || content.web;
   if (!keys) throw new Error('Invalid client_secret.json format (expected "installed" or "web").');
 
-  const redirectUri = 'http://localhost:3001/oauth2callback';
+  const redirectUri = keys.redirect_uris?.[0] || 'http://localhost:3001/oauth2callback';
   const oauth2Client = new google.auth.OAuth2(keys.client_id, keys.client_secret, redirectUri);
 
   // Check if we already have saved tokens
-  if (fs.existsSync(TOKEN_FILE)) {
-    const tokens = JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf8'));
+  if (tokenFile) {
+    const tokens = JSON.parse(fs.readFileSync(tokenFile, 'utf8'));
+    // Support Python Google Auth token format
+    if (tokens.token && !tokens.access_token) {
+      tokens.access_token = tokens.token;
+    }
     oauth2Client.setCredentials(tokens);
     return oauth2Client;
   }
