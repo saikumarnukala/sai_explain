@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { generateVideo } from './generator.js';
+import { callLLM } from './llm.js';
 
 try {
   if (process.loadEnvFile) process.loadEnvFile();
@@ -51,6 +52,39 @@ function parseArgs() {
   return options;
 }
 
+async function replenishTopicsIfNeeded(topics, topicsPath) {
+  const pending = topics.filter((t) => t.status === 'pending');
+  if (pending.length >= 3) return;
+
+  try {
+    console.log('[Queue] Pending topics low. Asking Gemini to generate 10 fresh, non-repeating topics...');
+    const existingTitles = topics.map((t) => t.topic).join(', ');
+    const res = await callLLM({
+      systemPrompt: 'You are an expert technical YouTube creator. Return JSON: { "topics": [ { "topic": "...", "theme": "midnight", "size": "shorts" } ] }',
+      userPrompt: `Generate 10 new, engaging, high-CTR tech explainer topics for YouTube Shorts (9:16 vertical). They must be completely different from these already covered topics:\n${existingTitles}\n\nTopics should be concrete concepts like caching, networking, system design, databases, security, and developer tools.`,
+      jsonMode: true,
+    });
+
+    if (Array.isArray(res.topics) && res.topics.length > 0) {
+      let maxId = topics.reduce((m, t) => Math.max(m, t.id || 0), 0);
+      for (const t of res.topics) {
+        topics.push({
+          id: ++maxId,
+          topic: t.topic,
+          theme: t.theme || 'midnight',
+          size: t.size || 'shorts',
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        });
+      }
+      fs.writeFileSync(topicsPath, JSON.stringify(topics, null, 2), 'utf8');
+      console.log(`[Queue] Added ${res.topics.length} new topics to topics.json queue.`);
+    }
+  } catch (err) {
+    console.warn('[Queue] Could not auto-replenish topics:', err.message);
+  }
+}
+
 async function getNextTopic() {
   const topicsPath = path.join(process.cwd(), 'topics.json');
   if (!fs.existsSync(topicsPath)) {
@@ -58,6 +92,8 @@ async function getNextTopic() {
   }
 
   const topics = JSON.parse(fs.readFileSync(topicsPath, 'utf8'));
+  await replenishTopicsIfNeeded(topics, topicsPath);
+
   const nextItem = topics.find((t) => t.status === 'pending');
   if (!nextItem) {
     throw new Error('No pending topics left in topics.json! Add more topics or specify --topic.');
