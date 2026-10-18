@@ -1,19 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * YouTube Video Uploader Script
+ * Robust YouTube Resumable Video Uploader
  * Uploads video.mp4, sets custom thumbnail (video.cover.jpg),
  * and uploads captions (video.srt).
- *
- * Setup:
- *   1. Download your client_secret.json from Google Cloud Console.
- *   2. Save it as `client_secret.json` in the root folder.
- *   3. Run: node scripts/upload-youtube.js videos/git-internals
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import https from 'node:https';
 import { google } from 'googleapis';
 
 const SCOPES = [
@@ -23,8 +19,6 @@ const SCOPES = [
 ];
 
 const ROOT_DIR = process.cwd();
-const CLIENT_SECRET_FILE = path.join(ROOT_DIR, 'client_secret.json');
-const TOKEN_FILE = path.join(ROOT_DIR, 'youtube_token.json');
 
 function findFile(filenames) {
   for (const name of filenames) {
@@ -34,35 +28,67 @@ function findFile(filenames) {
   return null;
 }
 
-async function getOAuth2Client() {
-  const secretFile = findFile(['client_secret.json', 'client_secrets.json']);
-  const tokenFile = findFile(['youtube_token.json', 'token.json']);
+function getClientKeys() {
+  if (process.env.CLIENT_SECRET_JSON) {
+    try {
+      const parsed = JSON.parse(process.env.CLIENT_SECRET_JSON);
+      return parsed.installed || parsed.web || parsed;
+    } catch (_) {}
+  }
 
+  const secretFile = findFile(['client_secret.json', 'client_secrets.json']);
   if (!secretFile) {
-    throw new Error(
-      `Missing client_secret.json!\nPlease download it from Google Cloud Console and place it at:\n${path.join(ROOT_DIR, 'client_secret.json')}`
-    );
+    throw new Error('Missing client_secret.json! Please place it in the project root or set CLIENT_SECRET_JSON.');
   }
 
   const content = JSON.parse(fs.readFileSync(secretFile, 'utf8'));
-  const keys = content.installed || content.web;
-  if (!keys) throw new Error('Invalid client_secret.json format (expected "installed" or "web").');
+  return content.installed || content.web || content;
+}
 
+function getStoredTokens() {
+  if (process.env.YOUTUBE_TOKEN_JSON) {
+    try {
+      const parsed = JSON.parse(process.env.YOUTUBE_TOKEN_JSON);
+      return parsed;
+    } catch (_) {}
+  }
+
+  const tokenFile = findFile(['youtube_token.json', 'token.json']);
+  if (!tokenFile) return null;
+
+  return JSON.parse(fs.readFileSync(tokenFile, 'utf8'));
+}
+
+async function getAuthenticatedClient() {
+  const keys = getClientKeys();
   const redirectUri = keys.redirect_uris?.[0] || 'http://localhost:3001/oauth2callback';
   const oauth2Client = new google.auth.OAuth2(keys.client_id, keys.client_secret, redirectUri);
 
-  // Check if we already have saved tokens
-  if (tokenFile) {
-    const tokens = JSON.parse(fs.readFileSync(tokenFile, 'utf8'));
-    // Support Python Google Auth token format
-    if (tokens.token && !tokens.access_token) {
-      tokens.access_token = tokens.token;
+  let tokens = getStoredTokens();
+
+  if (tokens) {
+    const refreshToken = tokens.refresh_token;
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken,
+      access_token: tokens.token || tokens.access_token,
+    });
+
+    try {
+      console.log('Refreshing YouTube access token...');
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+
+      // Save refreshed tokens locally if not in CI
+      const tokenFile = findFile(['youtube_token.json', 'token.json']) || path.join(ROOT_DIR, 'youtube_token.json');
+      fs.writeFileSync(tokenFile, JSON.stringify({ ...tokens, ...credentials }, null, 2), 'utf8');
+
+      return { oauth2Client, accessToken: credentials.access_token };
+    } catch (err) {
+      console.warn('Could not refresh token automatically:', err.message);
     }
-    oauth2Client.setCredentials(tokens);
-    return oauth2Client;
   }
 
-  // Authorize via local web server
+  // Interactive browser authorization if no valid token
   return new Promise((resolve, reject) => {
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -84,16 +110,18 @@ async function getOAuth2Client() {
           const code = url.searchParams.get('code');
           if (!code) throw new Error('Authorization code not found in callback URL.');
 
-          const { tokens } = await oauth2Client.getToken(code);
-          oauth2Client.setCredentials(tokens);
-          fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens, null, 2), 'utf8');
+          const { tokens: newTokens } = await oauth2Client.getToken(code);
+          oauth2Client.setCredentials(newTokens);
+
+          const savePath = path.join(ROOT_DIR, 'youtube_token.json');
+          fs.writeFileSync(savePath, JSON.stringify(newTokens, null, 2), 'utf8');
 
           res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end('<h1>Authorization Successful!</h1><p>You can close this tab and return to your terminal.</p>');
 
           server.close();
           console.log(`✅ Authorization tokens saved to youtube_token.json`);
-          resolve(oauth2Client);
+          resolve({ oauth2Client, accessToken: newTokens.access_token });
         }
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -107,7 +135,20 @@ async function getOAuth2Client() {
   });
 }
 
-async function uploadVideo(projectPath, options = {}) {
+function getLatestProject() {
+  const videosDir = path.join(ROOT_DIR, 'videos');
+  if (!fs.existsSync(videosDir)) return null;
+  const entries = fs.readdirSync(videosDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => {
+      const p = path.join(videosDir, d.name);
+      return { dir: p, mtime: fs.statSync(p).mtimeMs };
+    })
+    .sort((a, b) => b.mtime - a.mtime);
+  return entries[0]?.dir || null;
+}
+
+export async function uploadVideo(projectPath, options = {}) {
   const absProjectDir = path.resolve(ROOT_DIR, projectPath);
   const videoJsonPath = path.join(absProjectDir, 'video.json');
   const outDir = path.join(absProjectDir, 'out');
@@ -132,79 +173,181 @@ async function uploadVideo(projectPath, options = {}) {
     description += `\nChapters:\n${chaptersText}\n`;
   }
 
-  const tags = options.tags || ['explainer', 'coding', 'software development', 'programming'];
-  const privacyStatus = options.privacy || 'private'; // 'private', 'unlisted', or 'public'
+  const tags = options.tags || ['explainer', 'coding', 'software development', 'programming', 'tech'];
+  const privacyStatus = options.privacy || 'public';
 
-  console.log(`\nConnecting to YouTube API...`);
-  const auth = await getOAuth2Client();
-  const youtube = google.youtube({ version: 'v3', auth });
+  const { accessToken } = await getAuthenticatedClient();
 
-  console.log(`\nUploading video: "${title}" (${(fs.statSync(mp4Path).size / (1024 * 1024)).toFixed(1)} MB)...`);
+  const fileStats = fs.statSync(mp4Path);
+  const fileSize = fileStats.size;
 
-  const res = await youtube.videos.insert({
-    part: 'snippet,status',
-    requestBody: {
-      snippet: {
-        title,
-        description,
-        tags,
-        categoryId: '28', // Science & Technology
-      },
-      status: {
-        privacyStatus,
-        selfDeclaredMadeForKids: false,
-      },
+  console.log(`\n======================================================`);
+  console.log(`🎬 Initiating Resumable YouTube Upload`);
+  console.log(`📌 Title: "${title}"`);
+  console.log(`📦 File Size: ${(fileSize / (1024 * 1024)).toFixed(1)} MB`);
+  console.log(`🔒 Privacy: ${privacyStatus.toUpperCase()}`);
+  console.log(`======================================================\n`);
+
+  const metadata = {
+    snippet: {
+      title,
+      description,
+      tags,
+      categoryId: '28', // Science & Technology
+      defaultLanguage: 'en',
+      defaultAudioLanguage: 'en',
     },
-    media: {
-      body: fs.createReadStream(mp4Path),
+    status: {
+      privacyStatus,
+      selfDeclaredMadeForKids: false,
     },
+  };
+
+  // Step 1: Initiate resumable session
+  const initRes = await fetch(
+    'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Upload-Content-Type': 'video/mp4',
+        'X-Upload-Content-Length': String(fileSize),
+      },
+      body: JSON.stringify(metadata),
+    }
+  );
+
+  if (!initRes.ok) {
+    const errText = await initRes.text();
+    throw new Error(`Failed to initiate YouTube upload (${initRes.status}): ${errText}`);
+  }
+
+  const uploadUrl = initRes.headers.get('location');
+  if (!uploadUrl) throw new Error('YouTube did not return a resumable upload location URL.');
+
+  // Step 2: Upload binary video data via https.request (rock-solid on all OSes)
+  console.log('Uploading video bytes to YouTube...');
+  const fileBuffer = fs.readFileSync(mp4Path);
+  const urlObj = new URL(uploadUrl);
+
+  const videoData = await new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        protocol: urlObj.protocol,
+        hostname: urlObj.hostname,
+        port: urlObj.port || 443,
+        path: urlObj.pathname + urlObj.search,
+        method: 'PUT',
+        headers: {
+          'Content-Length': fileBuffer.length,
+          'Content-Type': 'video/mp4',
+        },
+      },
+      (res) => {
+        let raw = '';
+        res.on('data', (chunk) => (raw += chunk));
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve(JSON.parse(raw));
+            } catch (e) {
+              resolve({ id: null, raw });
+            }
+          } else {
+            reject(new Error(`YouTube upload returned status ${res.statusCode}: ${raw}`));
+          }
+        });
+      }
+    );
+
+    req.on('error', reject);
+    req.write(fileBuffer);
+    req.end();
   });
-
-  const videoId = res.data.id;
+  const videoId = videoData.id;
   const videoUrl = `https://youtu.be/${videoId}`;
-  console.log(`\n🎉 Video uploaded successfully!`);
-  console.log(`🔗 Video URL: ${videoUrl}`);
-  console.log(`🔒 Privacy: ${privacyStatus}`);
 
-  // Upload custom thumbnail
+  console.log(`\n🎉 Upload Complete!`);
+  console.log(`🔗 YouTube URL: ${videoUrl}`);
+  console.log(`🆔 Video ID:    ${videoId}`);
+
+  // Step 3: Upload custom thumbnail if available
   if (fs.existsSync(coverPath)) {
     try {
-      console.log(`Uploading custom thumbnail...`);
-      await youtube.thumbnails.set({
-        videoId,
-        media: {
-          mimeType: 'image/jpeg',
-          body: fs.createReadStream(coverPath),
-        },
-      });
-      console.log(`✅ Thumbnail uploaded.`);
-    } catch (thumbErr) {
-      console.warn(`⚠️ Thumbnail upload note:`, thumbErr.message);
+      console.log('\nUploading custom thumbnail...');
+      const thumbStats = fs.statSync(coverPath);
+      const thumbStream = fs.createReadStream(coverPath);
+      const thumbRes = await fetch(
+        `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'image/jpeg',
+            'Content-Length': String(thumbStats.size),
+          },
+          body: thumbStream,
+          duplex: 'half',
+        }
+      );
+      if (thumbRes.ok) {
+        console.log('✅ Custom thumbnail uploaded successfully.');
+      } else {
+        const thumbErr = await thumbRes.text();
+        console.warn('⚠️ Custom thumbnail note:', thumbErr);
+      }
+    } catch (e) {
+      console.warn('⚠️ Thumbnail note:', e.message);
     }
   }
 
-  // Upload subtitles / captions
+  // Step 4: Upload subtitles / captions if available
   if (fs.existsSync(srtPath)) {
     try {
-      console.log(`Uploading English captions (.srt)...`);
-      await youtube.captions.insert({
-        part: 'snippet',
-        requestBody: {
-          snippet: {
-            videoId,
-            language: 'en',
-            name: 'English',
-            isDraft: false,
+      console.log('Uploading closed captions (.srt)...');
+      const captionMeta = {
+        snippet: {
+          videoId,
+          language: 'en',
+          name: 'English',
+          isDraft: false,
+        },
+      };
+
+      const srtStats = fs.statSync(srtPath);
+      const capInitRes = await fetch(
+        'https://www.googleapis.com/upload/youtube/v3/captions?uploadType=resumable&part=snippet',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'X-Upload-Content-Type': '*/*',
+            'X-Upload-Content-Length': String(srtStats.size),
           },
-        },
-        media: {
-          mimeType: '*/*',
-          body: fs.createReadStream(srtPath),
-        },
-      });
-      console.log(`✅ Captions uploaded.`);
-    } catch (captionErr) {
-      console.warn(`⚠️ Captions upload note:`, captionErr.message);
+          body: JSON.stringify(captionMeta),
+        }
+      );
+
+      if (capInitRes.ok) {
+        const capUploadUrl = capInitRes.headers.get('location');
+        if (capUploadUrl) {
+          const srtStream = fs.createReadStream(srtPath);
+          await fetch(capUploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Length': String(srtStats.size),
+              'Content-Type': '*/*',
+            },
+            body: srtStream,
+            duplex: 'half',
+          });
+          console.log('✅ Captions uploaded successfully.');
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Captions note:', e.message);
     }
   }
 
@@ -213,8 +356,27 @@ async function uploadVideo(projectPath, options = {}) {
 
 async function main() {
   const args = process.argv.slice(2);
-  const projectPath = args[0] || 'videos/git-internals';
-  const privacy = args.includes('--public') ? 'public' : args.includes('--unlisted') ? 'unlisted' : 'private';
+  let projectPath = null;
+  let privacy = 'public';
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--public') {
+      privacy = 'public';
+    } else if (arg === '--unlisted') {
+      privacy = 'unlisted';
+    } else if (arg === '--private') {
+      privacy = 'private';
+    } else if (arg === '--latest') {
+      projectPath = getLatestProject();
+    } else if (!arg.startsWith('--')) {
+      projectPath = arg;
+    }
+  }
+
+  if (!projectPath) {
+    projectPath = getLatestProject() || 'videos/git-internals';
+  }
 
   try {
     await uploadVideo(projectPath, { privacy });
@@ -227,5 +389,3 @@ async function main() {
 if (process.argv[1] && process.argv[1].endsWith('upload-youtube.js')) {
   main();
 }
-
-export { uploadVideo };
