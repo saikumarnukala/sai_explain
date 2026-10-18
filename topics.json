@@ -71,5 +71,285 @@
     "theme": "clean",
     "size": "shorts",
     "status": "pending"
+  },
+  {
+    "id": 11,
+    "topic": "How Kafka Handles Millions of Messages per Second",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 12,
+    "topic": "How Rate Limiting Algorithms Like Token Bucket Work",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 13,
+    "topic": "What Happens During a DNS Lookup Step-by-Step",
+    "theme": "blueprint",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 14,
+    "topic": "SQL vs NoSQL: When to Choose Which Database",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 15,
+    "topic": "How Kubernetes Manages Container Pods",
+    "theme": "blueprint",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 16,
+    "topic": "Consistent Hashing Explained Simply",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 17,
+    "topic": "How CDNs Serve Content at Light Speed",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 18,
+    "topic": "What is CAP Theorem in Distributed Systems?",
+    "theme": "chalk",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 19,
+    "topic": "TCP vs UDP: Speed vs Reliability",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 20,
+    "topic": "How Webhooks Work Under the Hood",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 21,
+    "topic": "Database Sharding vs Partitioning Explained",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 22,
+    "topic": "How OAuth 2.0 Works: Grant Types in Plain English",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 23,
+    "topic": "Stack vs Heap Memory: Where Variables Live",
+    "theme": "chalk",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 24,
+    "topic": "How Load Balancers Distribute Web Traffic",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 25,
+    "topic": "Why UUIDs vs Auto-Incrementing IDs Matter",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 26,
+    "topic": "How Asymmetric Public-Private Key Encryption Works",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 27,
+    "topic": "Concurrency vs Parallelism: The Critical Difference",
+    "theme": "chalk",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 28,
+    "topic": "How ACID Transactions Keep Databases Safe",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 29,
+    "topic": "What is gRPC and Why is It Faster than REST?",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 30,
+    "topic": "How Database Connection Pools Prevent Server Crashes",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 31,
+    "topic": "How Serverless Cold Starts Actually Happen",
+    "theme": "blueprint",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 32,
+    "topic": "What is CORS and Why Does Your Browser Block It?",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 33,
+    "topic": "How Git Rebase Rewrites History Under the Hood",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 34,
+    "topic": "What is Event-Driven Architecture?",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 35,
+    "topic": "How Vector Databases Power Modern AI Search",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 36,
+    "topic": "What is a Reverse Proxy vs Forward Proxy?",
+    "theme": "blueprint",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 37,
+    "topic": "How Bloom Filters Check Existence in Milliseconds",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 38,
+    "topic": "HTTP/2 vs HTTP/3: Why the Web Switched to UDP",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 39,
+    "topic": "How Zero-Downtime Deployments Work",
+    "theme": "blueprint",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 40,
+    "topic": "What are Microservices Saga Patterns for Distributed Transactions?",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 41,
+    "topic": "How WebAssembly Runs Native Code in Your Browser",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 42,
+    "topic": "What is a Memory Leak and How to Detect It",
+    "theme": "chalk",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 43,
+    "topic": "How Optimistic vs Pessimistic Locking Works",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 44,
+    "topic": "Understanding Big-O Notation in 60 Seconds",
+    "theme": "chalk",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 45,
+    "topic": "How Message Queues Decouple High-Scale Systems",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 46,
+    "topic": "What is Idempotency in API Design?",
+    "theme": "clean",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 47,
+    "topic": "How Read Replicas Scale Database Performance",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 48,
+    "topic": "Why Salted Hashes Stop Password Leaks",
+    "theme": "midnight",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 49,
+    "topic": "How Edge Functions Reduce Latency Globally",
+    "theme": "blueprint",
+    "size": "shorts",
+    "status": "pending"
+  },
+  {
+    "id": 50,
+    "topic": "Monolith vs Microservices: The Honest Truth",
+    "theme": "chalk",
+    "size": "shorts",
+    "status": "pending"
   }
 ]
