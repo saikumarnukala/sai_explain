@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "topic": "How WebSockets Keep Real-Time Connections Alive",
+    "theme": "midnight",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 2,
+    "topic": "JWT vs Session Cookies: Which One Should You Use?",
+    "theme": "midnight",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 3,
+    "topic": "How Docker Containers Actually Work Under Linux",
+    "theme": "blueprint",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 4,
+    "topic": "Why Redis is So Incredibly Fast",
+    "theme": "midnight",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 5,
+    "topic": "Database Indexing: How B-Trees Find Records Fast",
+    "theme": "clean",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 6,
+    "topic": "How HTTPS Handshake and TLS Encryption Work",
+    "theme": "midnight",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 7,
+    "topic": "What is an API Gateway and Why Do Microservices Need It?",
+    "theme": "midnight",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 8,
+    "topic": "Event Loops in Node.js and JavaScript Explained",
+    "theme": "midnight",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 9,
+    "topic": "How Garbage Collection Works in Modern Runtimes",
+    "theme": "chalk",
+    "size": "youtube",
+    "status": "pending"
+  },
+  {
+    "id": 10,
+    "topic": "GraphQL vs REST APIs: The Real Tradeoffs",
+    "theme": "clean",
+    "size": "youtube",
+    "status": "pending"
+  }
+]

@@ -45,7 +45,9 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "build:icons": "node scripts/build-icons.mjs",
-    "build:fonts": "node scripts/fetch-fonts.mjs"
+    "build:fonts": "node scripts/fetch-fonts.mjs",
+    "daily": "node scripts/daily-pipeline.js",
+    "api": "node scripts/api-server.js"
   },
   "dependencies": {
     "@huggingface/transformers": "3.8.1",
