@@ -87,7 +87,7 @@ async function main() {
     topicContext = await getNextTopic();
     selectedTopic = topicContext.nextItem.topic;
     theme = topicContext.nextItem.theme || theme;
-    if (topicContext.nextItem.size) size = topicContext.nextItem.size;
+    if (!opts.shorts && topicContext.nextItem.size) size = topicContext.nextItem.size;
     console.log(`[Queue] Picked next topic #${topicContext.nextItem.id}: "${selectedTopic}"`);
   }
 

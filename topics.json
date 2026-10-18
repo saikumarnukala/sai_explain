@@ -4,14 +4,16 @@
     "topic": "How WebSockets Keep Real-Time Connections Alive",
     "theme": "midnight",
     "size": "youtube",
-    "status": "pending"
+    "status": "completed",
+    "completedAt": "2026-10-18T13:43:00.752Z"
   },
   {
     "id": 2,
     "topic": "JWT vs Session Cookies: Which One Should You Use?",
     "theme": "midnight",
     "size": "youtube",
-    "status": "pending"
+    "status": "completed",
+    "completedAt": "2026-10-18T13:46:29.036Z"
   },
   {
     "id": 3,
