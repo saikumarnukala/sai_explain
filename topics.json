@@ -20,7 +20,8 @@
     "topic": "How Docker Containers Actually Work Under Linux",
     "theme": "blueprint",
     "size": "shorts",
-    "status": "pending"
+    "status": "completed",
+    "completedAt": "2026-10-18T14:53:07.135Z"
   },
   {
     "id": 4,
