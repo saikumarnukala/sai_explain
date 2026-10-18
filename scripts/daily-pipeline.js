@@ -177,7 +177,7 @@ Options:
       console.log(`  node bin/explainroo.js render videos/${result.slug}`);
     }
 
-    if (topicContext) {
+    if (topicContext && result.files.mp4) {
       await markTopicDone(topicContext.topicsPath, topicContext.topics, topicContext.nextItem.id);
       console.log(`[Queue] Marked topic #${topicContext.nextItem.id} as completed.`);
     }

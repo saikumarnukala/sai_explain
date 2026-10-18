@@ -22,6 +22,7 @@ Your task is to generate:
   Most developers use Git without knowing what happens inside. [#magic] It feels like magic, but the architecture is simple.
 - Every sentence must trigger a visual change using a marker [#marker_name] or spoken word.
 - Use {shown|spoken} for anything the voice might misread, e.g. {SQL|sequel}, {API|A P I}, {v2.1|version two point one}, {40-character|40 character}.
+- NEVER use single braces like {word} without a pipe! It must always have a pipe {shown|spoken}.
 - Leave out filler words like "just", "simply", "really", "actually".
 - Do not say "Let's dive in" or "Stay tuned".
 - End with a plain sentence summing up the main takeaway.

@@ -74,8 +74,11 @@ export async function generateVideo({
     watermark: false,
   };
 
+  // Sanitize malformed braces: {word} without a pipe -> word
+  const sanitizedScript = generated.script.replace(/\{([^{}|]+)\}/g, '$1').trim() + '\n';
+
   fs.writeFileSync(path.join(projectDir, 'video.json'), JSON.stringify(videoConfig, null, 2), 'utf8');
-  fs.writeFileSync(path.join(projectDir, 'script.md'), generated.script.trim() + '\n', 'utf8');
+  fs.writeFileSync(path.join(projectDir, 'script.md'), sanitizedScript, 'utf8');
   fs.writeFileSync(path.join(projectDir, 'scenes.js'), generated.scenes.trim() + '\n', 'utf8');
 
   onProgress({ stage: 'files_written', message: `Saved project files to videos/${slug}` });
@@ -99,7 +102,7 @@ The previous scenes.js had the following errors when checked by Explainroo:
 ${checkRes.stdout}
 
 Current script.md:
-${generated.script}
+${sanitizedScript}
 
 Current scenes.js:
 ${generated.scenes}
@@ -117,7 +120,8 @@ Please fix the errors in scenes.js and return the updated JSON with keys: "scrip
       if (fixed.scenes) {
         fs.writeFileSync(path.join(projectDir, 'scenes.js'), fixed.scenes.trim() + '\n', 'utf8');
         if (fixed.script) {
-          fs.writeFileSync(path.join(projectDir, 'script.md'), fixed.script.trim() + '\n', 'utf8');
+          const cleanFixed = fixed.script.replace(/\{([^{}|]+)\}/g, '$1').trim() + '\n';
+          fs.writeFileSync(path.join(projectDir, 'script.md'), cleanFixed, 'utf8');
           await runExplainrooCommand(['voice', `videos/${slug}`], rootDir);
         }
         checkRes = await runExplainrooCommand(['check', `videos/${slug}`], rootDir);
@@ -133,6 +137,9 @@ Please fix the errors in scenes.js and return the updated JSON with keys: "scrip
     const renderArgs = ['render', `videos/${slug}`];
     if (isDraft) renderArgs.push('--draft');
     renderRes = await runExplainrooCommand(renderArgs, rootDir);
+    if (!renderRes.ok) {
+      throw new Error(`Explainroo render failed:\n${renderRes.stderr || renderRes.stdout}`);
+    }
   }
 
   const outDir = path.join(projectDir, 'out');
