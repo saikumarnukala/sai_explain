@@ -2,8 +2,8 @@ name: Daily Video Generation & YouTube Upload
 
 on:
   schedule:
-    # 8:00 AM Indian Standard Time (IST = UTC + 5:30) is 2:30 AM UTC
-    - cron: '30 2 * * *'
+    # 7:55 AM Indian Standard Time (IST = UTC + 5:30) is 2:25 AM UTC (off-peak minute to avoid GitHub Actions queue delays)
+    - cron: '25 2 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI anytime
 
 permissions:
@@ -49,6 +49,9 @@ jobs:
       - name: Generate daily video with Gemini and render MP4
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_MODEL: 'gemini-3.8-flash'
         run: npm run daily -- --next --render
 
@@ -62,6 +65,7 @@ jobs:
           git add topics.json
           if ! git diff-index --quiet HEAD --; then
             git commit -m "chore: update daily topics queue [skip ci]"
+            git pull --rebase origin main || true
             git push
           fi
 

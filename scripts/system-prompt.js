@@ -17,9 +17,17 @@ Your task is to generate:
 - Down-to-earth English, everyday words. Keep sentences short (8 to 18 words), one idea per sentence.
 - Aim for 45 to 80 seconds (about 120-180 words total).
 - 4 to 6 scenes total.
-- One "##" block per scene. Example:
-  ## hook
-  Most developers use Git without knowing what happens inside. [#magic] It feels like magic, but the architecture is simple.
+- CRITICAL SCENE HEADING SYNTAX:
+  - Every scene MUST begin with "## <id>" or "## <id> {hold=1.5}".
+  - The <id> MUST be a single lowercase alphanumeric identifier (hyphens or underscores allowed), e.g. "## hook", "## scene2", "## scene3", "## scene4", "## outro".
+  - NEVER include titles, numbers with dots, spaces, colons, or descriptions in the "##" line!
+    INCORRECT: "## Scene 1: Introduction"
+    INCORRECT: "## 1. How Redis Works"
+    INCORRECT: "### Hook"
+    CORRECT: "## hook"
+    CORRECT: "## scene2"
+    CORRECT: "## outro {hold=1.5}"
+  - In scenes.js, the exported object MUST have matching function names: hook(s) {}, scene2(s) {}, scene3(s) {}, scene4(s) {}, outro(s) {}.
 - Every sentence must trigger a visual change using a marker [#marker_name] or spoken word.
 - Use {shown|spoken} for anything the voice might misread, e.g. {SQL|sequel}, {API|A P I}, {v2.1|version two point one}, {40-character|40 character}.
 - NEVER use single braces like {word} without a pipe! It must always have a pipe {shown|spoken}.

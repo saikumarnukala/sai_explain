@@ -145,46 +145,68 @@ Options:
     process.exit(1);
   }
 
-  console.log(`\n======================================================`);
-  console.log(`🚀 Starting Daily Video Generation`);
-  console.log(`📌 Topic: ${selectedTopic}`);
-  console.log(`📐 Format: ${size.toUpperCase()}`);
-  console.log(`🎨 Theme: ${theme}`);
-  console.log(`======================================================\n`);
+  const maxTopicAttempts = opts.next ? 2 : 1;
+  let success = false;
 
-  try {
-    const result = await generateVideo({
-      topic: selectedTopic,
-      size,
-      theme,
-      voice: opts.voice,
-      autoRender: opts.render,
-      isDraft: opts.draft,
-      onProgress: ({ message }) => console.log(`[Progress] ${message}`),
-    });
+  for (let topicAttempt = 1; topicAttempt <= maxTopicAttempts; topicAttempt++) {
+    console.log(`\n======================================================`);
+    console.log(`🚀 Starting Daily Video Generation (Attempt ${topicAttempt}/${maxTopicAttempts})`);
+    console.log(`📌 Topic: ${selectedTopic}`);
+    console.log(`📐 Format: ${size.toUpperCase()}`);
+    console.log(`🎨 Theme: ${theme}`);
+    console.log(`======================================================\n`);
 
-    console.log(`\n✅ Video project created successfully!`);
-    console.log(`📁 Project folder: ${result.projectDir}`);
-    console.log(`📄 Script: ${result.files.scriptMd}`);
-    console.log(`🎨 Scenes: ${result.files.scenesJs}`);
+    try {
+      const result = await generateVideo({
+        topic: selectedTopic,
+        size,
+        theme,
+        voice: opts.voice,
+        autoRender: opts.render,
+        isDraft: opts.draft,
+        onProgress: ({ message }) => console.log(`[Progress] ${message}`),
+      });
 
-    if (result.files.mp4) {
-      console.log(`🎬 Rendered MP4: ${result.files.mp4}`);
-      if (result.files.cover) console.log(`🖼️ Thumbnail: ${result.files.cover}`);
-      if (result.files.srt) console.log(`📝 Subtitles: ${result.files.srt}`);
-    } else {
-      console.log(`\nTip: To render the final video, run:`);
-      console.log(`  node bin/explainroo.js render videos/${result.slug}`);
+      console.log(`\n✅ Video project created successfully!`);
+      console.log(`📁 Project folder: ${result.projectDir}`);
+      console.log(`📄 Script: ${result.files.scriptMd}`);
+      console.log(`🎨 Scenes: ${result.files.scenesJs}`);
+
+      if (result.files.mp4) {
+        console.log(`🎬 Rendered MP4: ${result.files.mp4}`);
+        if (result.files.cover) console.log(`🖼️ Thumbnail: ${result.files.cover}`);
+        if (result.files.srt) console.log(`📝 Subtitles: ${result.files.srt}`);
+      } else {
+        console.log(`\nTip: To render the final video, run:`);
+        console.log(`  node bin/explainroo.js render videos/${result.slug}`);
+      }
+
+      if (topicContext && result.files.mp4) {
+        await markTopicDone(topicContext.topicsPath, topicContext.topics, topicContext.nextItem.id);
+        console.log(`[Queue] Marked topic #${topicContext.nextItem.id} as completed.`);
+      }
+
+      console.log(`\n🎉 All done!`);
+      success = true;
+      break;
+    } catch (err) {
+      console.error(`\n❌ Error generating video for "${selectedTopic}":`, err.message);
+      if (topicAttempt < maxTopicAttempts && opts.next) {
+        console.warn(`[Queue] Trying fallback to next pending topic in queue...`);
+        try {
+          topicContext = await getNextTopic();
+          selectedTopic = topicContext.nextItem.topic;
+          theme = topicContext.nextItem.theme || theme;
+          if (!opts.shorts && topicContext.nextItem.size) size = topicContext.nextItem.size;
+        } catch (queueErr) {
+          console.error('[Queue] Could not get next topic:', queueErr.message);
+          break;
+        }
+      }
     }
+  }
 
-    if (topicContext && result.files.mp4) {
-      await markTopicDone(topicContext.topicsPath, topicContext.topics, topicContext.nextItem.id);
-      console.log(`[Queue] Marked topic #${topicContext.nextItem.id} as completed.`);
-    }
-
-    console.log(`\n🎉 All done!`);
-  } catch (err) {
-    console.error(`\n❌ Error generating video:`, err.message);
+  if (!success) {
     process.exit(1);
   }
 }
