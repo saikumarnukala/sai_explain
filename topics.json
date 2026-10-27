@@ -84,7 +84,8 @@
     "topic": "How Kafka Handles Millions of Messages per Second",
     "theme": "midnight",
     "size": "shorts",
-    "status": "pending"
+    "status": "completed",
+    "completedAt": "2026-10-27T08:14:52.640Z"
   },
   {
     "id": 12,
