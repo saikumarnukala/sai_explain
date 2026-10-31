@@ -116,7 +116,8 @@
     "topic": "How Kubernetes Manages Container Pods",
     "theme": "blueprint",
     "size": "shorts",
-    "status": "pending"
+    "status": "completed",
+    "completedAt": "2026-10-31T08:36:43.966Z"
   },
   {
     "id": 16,
