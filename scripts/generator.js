@@ -242,6 +242,11 @@ CRITICAL RULES:
     }
   }
 
+  if (!voiceRes.ok || !checkRes.ok) {
+    throw new Error(`Explainroo validation failed:\n${[voiceRes, checkRes]
+      .map(result => result.stderr || result.stdout).join('\n')}`);
+  }
+
   // Step 3: Render MP4
   let renderRes = null;
   if (autoRender) {
@@ -284,8 +289,13 @@ Please repair scenes.js and script.md to fix this error. Return JSON with "scrip
           );
           fs.writeFileSync(path.join(projectDir, 'script.md'), reSanitized.script, 'utf8');
           fs.writeFileSync(path.join(projectDir, 'scenes.js'), reSanitized.scenes, 'utf8');
-          await runExplainrooCommand(['voice', `videos/${slug}`], rootDir);
-          renderRes = await runExplainrooCommand(renderArgs, rootDir);
+          voiceRes = await runExplainrooCommand(['voice', `videos/${slug}`], rootDir);
+          checkRes = await runExplainrooCommand(['check', `videos/${slug}`], rootDir);
+          if (voiceRes.ok && checkRes.ok) {
+            renderRes = await runExplainrooCommand(renderArgs, rootDir);
+          } else {
+            throw new Error('Repaired scenes failed narration or layout validation.');
+          }
         }
       } catch (rErr) {
         console.warn('[Generator] Render fix attempt failed:', rErr.message);

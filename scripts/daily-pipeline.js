@@ -85,7 +85,7 @@ async function replenishTopicsIfNeeded(topics, topicsPath) {
   }
 }
 
-async function getNextTopic() {
+async function getNextTopic(excludeId) {
   const topicsPath = path.join(process.cwd(), 'topics.json');
   if (!fs.existsSync(topicsPath)) {
     throw new Error('topics.json not found.');
@@ -94,7 +94,7 @@ async function getNextTopic() {
   const topics = JSON.parse(fs.readFileSync(topicsPath, 'utf8'));
   await replenishTopicsIfNeeded(topics, topicsPath);
 
-  const nextItem = topics.find((t) => t.status === 'pending');
+  const nextItem = topics.find((t) => t.status === 'pending' && t.id !== excludeId);
   if (!nextItem) {
     throw new Error('No pending topics left in topics.json! Add more topics or specify --topic.');
   }
@@ -181,9 +181,13 @@ Options:
         console.log(`  node bin/explainroo.js render videos/${result.slug}`);
       }
 
-      if (topicContext && result.files.mp4) {
+      if (topicContext && result.rendered && !opts.draft) {
         await markTopicDone(topicContext.topicsPath, topicContext.topics, topicContext.nextItem.id);
         console.log(`[Queue] Marked topic #${topicContext.nextItem.id} as completed.`);
+      }
+
+      if (process.env.GITHUB_OUTPUT && result.rendered && !opts.draft) {
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `project_dir=videos/${result.slug}\n`);
       }
 
       console.log(`\n🎉 All done!`);
@@ -194,7 +198,7 @@ Options:
       if (topicAttempt < maxTopicAttempts && opts.next) {
         console.warn(`[Queue] Trying fallback to next pending topic in queue...`);
         try {
-          topicContext = await getNextTopic();
+          topicContext = await getNextTopic(topicContext.nextItem.id);
           selectedTopic = topicContext.nextItem.topic;
           theme = topicContext.nextItem.theme || theme;
           if (!opts.shorts && topicContext.nextItem.size) size = topicContext.nextItem.size;
